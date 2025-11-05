@@ -15,6 +15,7 @@ local action_state = require("telescope.actions.state")
 -- History management
 local search_history = {}
 local path_by_pwd = {}
+local default_fixed_string = false
 local MAX_HISTORY = 50
 local history_file = vim.fn.stdpath("data") .. "/telescope_grep_vibes_history.json"
 
@@ -39,6 +40,11 @@ local function load_history()
       if decoded.path_by_pwd and type(decoded.path_by_pwd) == "table" then
         path_by_pwd = decoded.path_by_pwd
       end
+
+      -- Load fixed string preference
+      if decoded.default_fixed_string ~= nil then
+        default_fixed_string = decoded.default_fixed_string
+      end
     end
   end
 end
@@ -50,6 +56,7 @@ local function save_history()
     local data = {
       search_history = search_history,
       path_by_pwd = path_by_pwd,
+      default_fixed_string = default_fixed_string,
     }
     f:write(vim.json.encode(data))
     f:close()
@@ -233,8 +240,11 @@ local function live_grep(opts)
     opts.cwd = opts.cwd or root_cwd
   end
 
-  -- Track fixed-string mode (default is regex)
-  local is_fixed_string = opts.fixed_string or false
+  -- Track fixed-string mode (use saved default if not explicitly provided)
+  local is_fixed_string = opts.fixed_string
+  if is_fixed_string == nil then
+    is_fixed_string = default_fixed_string
+  end
 
   local mode_indicator = is_fixed_string and "[LITERAL]" or "[REGEX]"
   local title = "Live Grep " .. mode_indicator .. " | <C-p> Path | <C-j/k> History | <C-f> Toggle"
@@ -330,11 +340,16 @@ local function live_grep(opts)
         local current_query = picker:_get_prompt()
         actions.close(prompt_bufnr)
 
-        -- Toggle mode and restart picker
+        -- Toggle mode and save preference
+        local new_mode = not is_fixed_string
+        default_fixed_string = new_mode
+        save_history()
+
+        -- Restart picker
         live_grep({
           cwd = opts.cwd,
           default_text = current_query,
-          fixed_string = not is_fixed_string,
+          fixed_string = new_mode,
         })
       end)
 
@@ -343,11 +358,16 @@ local function live_grep(opts)
         local current_query = picker:_get_prompt()
         actions.close(prompt_bufnr)
 
-        -- Toggle mode and restart picker
+        -- Toggle mode and save preference
+        local new_mode = not is_fixed_string
+        default_fixed_string = new_mode
+        save_history()
+
+        -- Restart picker
         live_grep({
           cwd = opts.cwd,
           default_text = current_query,
-          fixed_string = not is_fixed_string,
+          fixed_string = new_mode,
         })
       end)
 
