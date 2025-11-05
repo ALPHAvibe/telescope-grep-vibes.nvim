@@ -5,6 +5,7 @@ A custom Telescope live grep picker with path scoping and search history that re
 ## ✨ Features
 
 - 🔍 **Live grep** with instant results as you type
+- 🔤 **Regex & Literal modes** - toggle between regex and fixed-string search with `<C-f>`
 - 📁 **Path scoping** - narrow searches to specific directories with `<C-p>`
 - 📚 **Search history** - recall previous searches with `<C-j/k>`
 - 💾 **Persistent path memory** - remembers your preferred search directory per project
@@ -72,6 +73,7 @@ There are three ways to open the live grep picker:
 |------|-----|--------|
 | Insert/Normal | `<C-p>` | Open path picker to scope search to a directory |
 | Insert/Normal | `<C-j>` or `<C-k>` | Open search history |
+| Insert/Normal | `<C-f>` | Toggle between regex and literal (fixed-string) search |
 | Insert/Normal | `<Esc>` | Go back (from history to grep) |
 | Insert/Normal | `<Enter>` | Open file at matching line |
 
@@ -88,6 +90,27 @@ There are three ways to open the live grep picker:
 1. Press `<C-j>` or `<C-k>` to view your last 50 searches
 2. Select a search to run it again
 3. Press `<Esc>` to go back without selecting
+
+### Search Modes
+
+The plugin supports two search modes, toggled with `<C-f>`:
+
+**Regex Mode (default)** - `[REGEX]`
+- Uses regular expressions for pattern matching
+- Special characters like `.`, `*`, `()`, `[]` have special meaning
+- Example: `req.*Validate` matches "req.Validate", "request.ValidateUser", etc.
+
+**Literal Mode** - `[LITERAL]`
+- Searches for exact strings (fixed-string search)
+- Special characters are treated literally
+- Perfect for searching code with dots, parentheses, brackets
+- Example: `req.Validate(s.v)` searches for that exact string
+
+**When to use literal mode:**
+- Searching for function calls: `req.Validate(s.v)`
+- URLs or file paths: `api/v1/users`
+- Code with special characters: `map[string]interface{}`
+- When you want exact matches without regex interpretation
 
 ## 📝 Requirements
 
@@ -144,6 +167,8 @@ require('telescope').extensions.grep_vibes.live_grep({
 - Search history persists across Neovim sessions
 - Use `<C-p>` while typing to change scope without losing your query
 - Press `<Esc>` in history to go back instead of closing everything
+- Use `<C-f>` to toggle to literal mode when searching for code with special characters like `()`, `.`, `[]`
+- The current mode is shown in the title: `[REGEX]` or `[LITERAL]`
 
 ## 🗂️ Data Storage
 
@@ -151,6 +176,11 @@ Plugin data is stored at:
 - `~/.local/share/nvim/telescope_grep_vibes_history.json`
 
 This file contains both your search history and path preferences per project.
+
+## 🤝 Related Projects
+
+- [telescope-find-file-vibes.nvim](https://github.com/ALPHAvibe/telescope-find-file-vibes.nvim) - File finder with similar features
+- [telescope-atuin-vibes.nvim](https://github.com/ALPHAvibe/telescope-atuin-vibes.nvim) - Shell history integration
 
 
 ## 🙏 Acknowledgments

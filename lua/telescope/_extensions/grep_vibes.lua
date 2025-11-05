@@ -175,15 +175,18 @@ local function show_path_picker(current_picker, current_query, live_grep_fn)
           display = relative == "" and "." or relative
         end
 
+        -- Make ordinal fuzzy-friendly by replacing hyphens and underscores with spaces
+        local ordinal = relative:gsub("[-_]", " ")
+
         return {
           value = entry,
           display = display,
-          ordinal = relative,
+          ordinal = ordinal,
           path = entry,
         }
       end,
     }),
-    sorter = conf.generic_sorter({}),
+    sorter = conf.file_sorter({}),
     attach_mappings = function(prompt_bufnr, map)
       actions.select_default:replace(function()
         local selection = action_state.get_selected_entry()
@@ -230,11 +233,16 @@ local function live_grep(opts)
     opts.cwd = opts.cwd or root_cwd
   end
 
-  local title = "Live Grep | <C-p> Path | <C-j/k> History"
+  -- Track fixed-string mode (default is regex)
+  local is_fixed_string = opts.fixed_string or false
+
+  local mode_indicator = is_fixed_string and "[LITERAL]" or "[REGEX]"
+  local title = "Live Grep " .. mode_indicator .. " | <C-p> Path | <C-j/k> History | <C-f> Toggle"
   if opts.cwd ~= root_cwd then
     local Path = require("plenary.path")
     local relative = Path:new(opts.cwd):make_relative(root_cwd)
-    title = "Live Grep [" .. (relative == "" and "." or relative) .. "] | <C-p> Path | <C-j/k> History"
+    title = "Live Grep [" ..
+    (relative == "" and "." or relative) .. "] " .. mode_indicator .. " | <C-p> Path | <C-j/k> History | <C-f> Toggle"
   end
 
   -- Use telescope's built-in live_grep with our custom mappings
@@ -245,7 +253,11 @@ local function live_grep(opts)
     cwd = opts.cwd,
     default_text = opts.default_text,
     additional_args = function()
-      return { "--hidden", "--glob", "!.git/*", "--glob", "!node_modules/*" }
+      local args = { "--hidden", "--glob", "!.git/*", "--glob", "!node_modules/*" }
+      if is_fixed_string then
+        table.insert(args, "--fixed-strings")
+      end
+      return args
     end,
     layout_config = {
       horizontal = {
@@ -268,8 +280,17 @@ local function live_grep(opts)
         add_to_history(current_query)
 
         if selection then
+          -- Get the full file path
+          local filepath = selection.path or selection.filename
+          if not vim.startswith(filepath, '/') then
+            filepath = opts.cwd .. '/' .. filepath
+          end
+
           -- Open the file at the matching line
-          vim.cmd(string.format("edit +%d %s", selection.lnum, vim.fn.fnameescape(selection.filename)))
+          vim.cmd.edit(filepath)
+          if selection.lnum then
+            vim.api.nvim_win_set_cursor(0, { selection.lnum, selection.col or 0 })
+          end
         end
       end)
 
@@ -301,6 +322,33 @@ local function live_grep(opts)
 
       map("n", "<C-k>", function()
         show_history(prompt_bufnr, { cwd = opts.cwd }, live_grep)
+      end)
+
+      -- Ctrl+f: Toggle between regex and fixed-string mode
+      map("i", "<C-f>", function()
+        local picker = action_state.get_current_picker(prompt_bufnr)
+        local current_query = picker:_get_prompt()
+        actions.close(prompt_bufnr)
+
+        -- Toggle mode and restart picker
+        live_grep({
+          cwd = opts.cwd,
+          default_text = current_query,
+          fixed_string = not is_fixed_string,
+        })
+      end)
+
+      map("n", "<C-f>", function()
+        local picker = action_state.get_current_picker(prompt_bufnr)
+        local current_query = picker:_get_prompt()
+        actions.close(prompt_bufnr)
+
+        -- Toggle mode and restart picker
+        live_grep({
+          cwd = opts.cwd,
+          default_text = current_query,
+          fixed_string = not is_fixed_string,
+        })
       end)
 
       return true
