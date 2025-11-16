@@ -71,7 +71,7 @@ There are three ways to open the live grep picker:
 
 | Mode | Key | Action |
 |------|-----|--------|
-| Insert/Normal | `<C-p>` | Open path picker to scope search to a directory |
+| Insert/Normal | `<C-Shift-p>` | Open path picker to scope search to a directory |
 | Insert/Normal | `<C-j>` or `<C-k>` | Open search history |
 | Insert/Normal | `<C-f>` | Toggle between regex and literal (fixed-string) search |
 | Insert/Normal | `<Esc>` | Go back (from history to grep) |

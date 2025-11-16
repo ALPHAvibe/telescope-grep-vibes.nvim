@@ -247,12 +247,12 @@ local function live_grep(opts)
   end
 
   local mode_indicator = is_fixed_string and "[LITERAL]" or "[REGEX]"
-  local title = "Live Grep " .. mode_indicator .. " | <C-p> Path | <C-j/k> History | <C-f> Toggle"
+  local title = "Live Grep " .. mode_indicator .. " | <C-S-P> Path | <C-j/k> History | <C-f> Toggle"
   if opts.cwd ~= root_cwd then
     local Path = require("plenary.path")
     local relative = Path:new(opts.cwd):make_relative(root_cwd)
     title = "Live Grep [" ..
-    (relative == "" and "." or relative) .. "] " .. mode_indicator .. " | <C-p> Path | <C-j/k> History | <C-f> Toggle"
+    (relative == "" and "." or relative) .. "] " .. mode_indicator .. " | <C-S-P> Path | <C-j/k> History | <C-f> Toggle"
   end
 
   -- Use telescope's built-in live_grep with our custom mappings
@@ -304,14 +304,14 @@ local function live_grep(opts)
         end
       end)
 
-      -- Ctrl+p: Open path picker (preserve current query)
-      map("i", "<C-p>", function()
+      -- Ctrl+Shift+p: Open path picker (preserve current query)
+      map("i", "<C-S-P>", function()
         local picker = action_state.get_current_picker(prompt_bufnr)
         local current_query = picker:_get_prompt()
         show_path_picker(prompt_bufnr, current_query, live_grep)
       end)
 
-      map("n", "<C-p>", function()
+      map("n", "<C-S-P>", function()
         local picker = action_state.get_current_picker(prompt_bufnr)
         local current_query = picker:_get_prompt()
         show_path_picker(prompt_bufnr, current_query, live_grep)
